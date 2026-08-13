@@ -139,19 +139,23 @@ export default function layoutManager(containerElement: ElementX, orientation: O
 	function getSize(element: HTMLElement | OffsetSize) {
 		const htmlElement = element as HTMLElement;
 		if (htmlElement.tagName) {
-			const rect = htmlElement.getBoundingClientRect();
-			return orientation === 'vertical' ? rect.bottom - rect.top : rect.right - rect.left;
+			return propMapper.get(htmlElement, 'offsetSize') * getScale();
 		}
 
 		return propMapper.get(element, 'size');
 	}
 
+	function getDistanceToOffsetParent(element: ElementX) {
+		return propMapper.get(element, 'distanceToParent') * getScale() + (element[translationValue] || 0);
+	}
+
 	function getBeginEnd(element: HTMLElement) {
-		const rect = element.getBoundingClientRect();
-		const begin = propMapper.get(rect, 'begin');
+		const begin = getDistanceToOffsetParent(element as ElementX) +
+			(propMapper.get(values.rect, 'begin') + values.translation) -
+			getScrollValue(containerElement);
 		return {
 			begin,
-			end: propMapper.get(rect, 'end')
+			end: begin + getSize(element)
 		};
 	}
 

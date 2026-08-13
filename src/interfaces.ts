@@ -2,6 +2,19 @@ import { ContainerOptions } from './exportTypes';
 
 export type Position = { x: number; y: number };
 export type MousePosition = { clientX: number; clientY: number };
+export type TransformMatrix = {
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  e: number;
+  f: number;
+};
+export type ViewportTransformInfo = {
+  matrix: TransformMatrix;
+  boundingOffset: Position;
+  size: { width: number; height: number };
+};
 export interface Rect {
   left: number;
   right: number;
@@ -98,6 +111,8 @@ export interface GhostInfo {
   ghost: HTMLElement;
   centerDelta: Position;
   positionDelta: { left: number; top: number };
+  viewportTransform: TransformMatrix | null;
+  viewportOffset: Position | null;
 }
 
 export interface LayoutManager {

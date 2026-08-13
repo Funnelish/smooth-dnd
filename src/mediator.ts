@@ -1,7 +1,7 @@
 import * as constants from './constants';
 import { defaultOptions } from './defaults';
 import dragScroller from './scroller';
-import { Axis, DraggableInfo, ElementX, GhostInfo, IContainer, MousePosition, Position, TopLeft, Orientation } from './interfaces';
+import { Axis, DraggableInfo, ElementX, GhostInfo, IContainer, MousePosition, Position, TopLeft, Orientation, TransformMatrix } from './interfaces';
 import './polyfills';
 import { addCursorStyleToBody, addStyleToHead, removeStyle } from './styles';
 import * as Utils from './utils';
@@ -71,15 +71,48 @@ function getGhostParent() {
   }
 
   if (grabbedElement) {
-    return grabbedElement.parentElement || window.document.body;
+    const parentElement = grabbedElement.parentElement;
+    if (parentElement && !Utils.hasFixedPositionContainingBlockParent(parentElement)) {
+      return parentElement;
+    }
+    return window.document.body;
   } else {
     return window.document.body;
   }
 }
 
+function hasVisualViewportTransform(matrix: TransformMatrix) {
+  return Math.abs(matrix.a - 1) > 0.0001 ||
+    Math.abs(matrix.b) > 0.0001 ||
+    Math.abs(matrix.c) > 0.0001 ||
+    Math.abs(matrix.d - 1) > 0.0001;
+}
+
+function getGhostTransformString(topLeft: Position, scale = 1) {
+  const viewportTransform = ghostInfo.viewportTransform;
+  let transformString: string;
+
+  if (viewportTransform) {
+    const viewportOffset = ghostInfo.viewportOffset || { x: 0, y: 0 };
+    transformString = `matrix(${viewportTransform.a},${viewportTransform.b},${viewportTransform.c},${viewportTransform.d},${topLeft.x - viewportOffset.x},${topLeft.y - viewportOffset.y})`;
+  } else {
+    transformString = `translate3d(${topLeft.x}px,${topLeft.y}px, 0)`;
+  }
+
+  if (scale !== 1) {
+    transformString = `${transformString} scale(${scale})`;
+  }
+
+  return transformString;
+}
+
 function getGhostElement(wrapperElement: HTMLElement, { x, y }: Position, container: IContainer, cursor: string): GhostInfo {
   const wrapperRect = wrapperElement.getBoundingClientRect();
   const { left, top, right, bottom } = wrapperRect;
+  const viewportTransform = Utils.getElementViewportTransform(wrapperElement);
+  const visualViewportTransform = hasVisualViewportTransform(viewportTransform.matrix)
+    ? viewportTransform.matrix
+    : null;
 
   const wrapperVisibleRect = Utils.getIntersection(container.layout.getContainerRectangles().visibleRect, wrapperRect);
 
@@ -93,16 +126,21 @@ function getGhostElement(wrapperElement: HTMLElement, { x, y }: Position, contai
   ghost.style.left = '0px';
   ghost.style.transform = null;
   ghost.style.removeProperty('transform');
+  ghost.style.transformOrigin = null!;
+  ghost.style.removeProperty('transform-origin');
 
-  if (container.shouldUseTransformForGhost()) {
+  if (visualViewportTransform) {
+    ghost.style.transformOrigin = '0 0';
+    ghost.style.transform = `matrix(${visualViewportTransform.a},${visualViewportTransform.b},${visualViewportTransform.c},${visualViewportTransform.d},${left - viewportTransform.boundingOffset.x},${top - viewportTransform.boundingOffset.y})`;
+  } else if (container.shouldUseTransformForGhost()) {
     ghost.style.transform = `translate3d(${left}px, ${top}px, 0)`;
   } else {
     ghost.style.top = `${top}px`;
     ghost.style.left = `${left}px`;
   }
 
-  ghost.style.width = (right - left) + 'px';
-  ghost.style.height = (bottom - top) + 'px';
+  ghost.style.width = (visualViewportTransform ? viewportTransform.size.width : (right - left)) + 'px';
+  ghost.style.height = (visualViewportTransform ? viewportTransform.size.height : (bottom - top)) + 'px';
   ghost.style.overflow = 'visible';
   ghost.style.transition = null!;
   ghost.style.removeProperty('transition');
@@ -125,6 +163,8 @@ function getGhostElement(wrapperElement: HTMLElement, { x, y }: Position, contai
     ghost: ghost,
     centerDelta: { x: midX - x, y: midY - y },
     positionDelta: { left: left - x, top: top - y },
+    viewportTransform: visualViewportTransform,
+    viewportOffset: visualViewportTransform ? viewportTransform.boundingOffset : null,
     topLeft: {
       x: left,
       y: top
@@ -607,13 +647,10 @@ function initiateDrag(position: MousePosition, cursor: string) {
 let ghostAnimationFrame: number | null = null;
 function translateGhost(translateDuration = 0, scale = 1, fadeOut = false) {
   const { ghost, topLeft: { x, y } } = ghostInfo;
-  const useTransform = draggableInfo.container ? draggableInfo.container.shouldUseTransformForGhost() : true;
+  const useTransform = ghostInfo.viewportTransform !== null ||
+    (draggableInfo.container ? draggableInfo.container.shouldUseTransformForGhost() : true);
 
-  let transformString = useTransform ? `translate3d(${x}px,${y}px, 0)` : null;
-
-  if (scale !== 1) {
-    transformString = transformString ? `${transformString} scale(${scale})` : `scale(${scale})`;
-  }
+  const transformString = useTransform ? getGhostTransformString({ x, y }, scale) : null;
 
   if (translateDuration > 0) {
     ghostInfo.ghost.style.transitionDuration = translateDuration + 'ms';

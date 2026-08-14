@@ -1,5 +1,5 @@
 import { DraggableInfo, IContainer, Axis, Rect, ScrollAxis, Position } from "./interfaces";
-import { getScrollingAxis, hasClass, getVisibleRect } from "./utils";
+import { getElementScale, getScrollingAxis, hasClass, getVisibleRect } from "./utils";
 import { preventAutoScrollClass } from "./constants";
 
 type Direction = 'begin' | 'end';
@@ -74,10 +74,12 @@ function getScrollParams(position: Position, axis: Axis, rect: Rect): ScrollPara
 function addScrollValue(element: HTMLElement | Window, axis: Axis, value: number) {
 	if (element) {
 		if (element !== window) {
+			const scale = getElementScale(element as HTMLElement);
+			const localValue = axis === 'x' ? value / scale.x : value / scale.y;
 			if (axis === 'x') {
-				(element as HTMLElement).scrollLeft += value;
+				(element as HTMLElement).scrollLeft += localValue;
 			} else {
-				(element as HTMLElement).scrollTop += value;
+				(element as HTMLElement).scrollTop += localValue;
 			}
 		} else {
 			if (axis === 'x') {

@@ -1,5 +1,13 @@
-import { Rect, Axis, ElementX, ScrollAxis, IContainer } from './interfaces';
-import { containerInstance } from './constants';
+import {
+  Rect,
+  Axis,
+  ElementX,
+  ScrollAxis,
+  IContainer,
+  TransformMatrix,
+  ViewportTransformInfo,
+} from "./interfaces";
+import { containerInstance } from "./constants";
 
 export const getIntersection = (rect1: Rect, rect2: Rect) => {
   return {
@@ -11,7 +19,7 @@ export const getIntersection = (rect1: Rect, rect2: Rect) => {
 };
 
 export const getIntersectionOnAxis = (rect1: Rect, rect2: Rect, axis: Axis) => {
-  if (axis === 'x') {
+  if (axis === "x") {
     return {
       left: Math.max(rect1.left, rect2.left),
       top: rect1.top,
@@ -30,6 +38,10 @@ export const getIntersectionOnAxis = (rect1: Rect, rect2: Rect, axis: Axis) => {
 
 export const getContainerRect = (element: HTMLElement): Rect => {
   const _rect = element.getBoundingClientRect();
+  const rectWidth = _rect.right - _rect.left;
+  const rectHeight = _rect.bottom - _rect.top;
+  const scaleX = element.offsetWidth ? rectWidth / element.offsetWidth : 1;
+  const scaleY = element.offsetHeight ? rectHeight / element.offsetHeight : 1;
   const rect = {
     left: _rect.left,
     right: _rect.right,
@@ -37,28 +49,109 @@ export const getContainerRect = (element: HTMLElement): Rect => {
     bottom: _rect.bottom,
   };
 
-  if (hasBiggerChild(element, 'x') && !isScrollingOrHidden(element, 'x')) {
-    const width = rect.right - rect.left;
-    rect.right = rect.right + element.scrollWidth - width;
+  if (hasBiggerChild(element, "x") && !isScrollingOrHidden(element, "x")) {
+    const extraWidth = (element.scrollWidth - element.clientWidth) * scaleX;
+    rect.right = rect.right + extraWidth;
   }
 
-  if (hasBiggerChild(element, 'y') && !isScrollingOrHidden(element, 'y')) {
-    const height = rect.bottom - rect.top;
-    rect.bottom = rect.bottom + element.scrollHeight - height;
+  if (hasBiggerChild(element, "y") && !isScrollingOrHidden(element, "y")) {
+    const extraHeight = (element.scrollHeight - element.clientHeight) * scaleY;
+    rect.bottom = rect.bottom + extraHeight;
   }
 
   return rect;
 };
 
+export const getElementScale = (element: HTMLElement) => {
+  const rect = element.getBoundingClientRect();
+  const width = rect.right - rect.left;
+  const height = rect.bottom - rect.top;
+
+  return {
+    x: element.offsetWidth ? width / element.offsetWidth : 1,
+    y: element.offsetHeight ? height / element.offsetHeight : 1,
+  };
+};
+
+function getRectViewportMatrix(
+  rect: Rect,
+  width: number,
+  height: number,
+): TransformMatrix {
+  return {
+    a: width ? (rect.right - rect.left) / width : 1,
+    b: 0,
+    c: 0,
+    d: height ? (rect.bottom - rect.top) / height : 1,
+    e: rect.left,
+    f: rect.top,
+  };
+}
+
+export const getElementViewportTransform = (
+  element: HTMLElement,
+): ViewportTransformInfo => {
+  const rect = element.getBoundingClientRect();
+  const rectWidth = rect.right - rect.left;
+  const rectHeight = rect.bottom - rect.top;
+  const width = element.offsetWidth || rectWidth;
+  const height = element.offsetHeight || rectHeight;
+  const anyElement = element as any;
+
+  if (anyElement.getBoxQuads) {
+    const quads = anyElement.getBoxQuads();
+    if (quads && quads.length > 0) {
+      const quad = quads[0];
+      const p1 = quad.p1;
+      const p2 = quad.p2;
+      const p4 = quad.p4;
+      if (p1 && p2 && p4) {
+        return {
+          matrix: {
+            a: width ? (p2.x - p1.x) / width : 1,
+            b: width ? (p2.y - p1.y) / width : 0,
+            c: height ? (p4.x - p1.x) / height : 0,
+            d: height ? (p4.y - p1.y) / height : 1,
+            e: p1.x,
+            f: p1.y,
+          },
+          boundingOffset: {
+            x: rect.left - p1.x,
+            y: rect.top - p1.y,
+          },
+          size: {
+            width,
+            height,
+          },
+        };
+      }
+    }
+  }
+
+  const matrix = getRectViewportMatrix(rect, width, height);
+
+  return {
+    matrix,
+    boundingOffset: {
+      x: rect.left - matrix.e,
+      y: rect.top - matrix.f,
+    },
+    size: {
+      width,
+      height,
+    },
+  };
+};
+
 export const getScrollingAxis = (element: HTMLElement): ScrollAxis | null => {
   const style = window.getComputedStyle(element);
-  const overflow = style['overflow'];
-  const general = overflow === 'auto' || overflow === 'scroll';
+  const overflow = style["overflow"];
+  const general = overflow === "auto" || overflow === "scroll";
   if (general) return ScrollAxis.xy;
   const overFlowX = style[`overflow-x` as any];
-  const xScroll = overFlowX === 'auto' || overFlowX === 'scroll';
+  const xScroll = overFlowX === "auto" || overFlowX === "scroll";
   const overFlowY = style[`overflow-y` as any];
-  const yScroll = overFlowY === 'auto' || overFlowY === 'scroll';
+  const yScroll = overFlowY === "auto" || overFlowY === "scroll";
 
   if (xScroll && yScroll) return ScrollAxis.xy;
   if (xScroll) return ScrollAxis.x;
@@ -68,24 +161,28 @@ export const getScrollingAxis = (element: HTMLElement): ScrollAxis | null => {
 
 export const isScrolling = (element: HTMLElement, axis: Axis) => {
   const style = window.getComputedStyle(element);
-  const overflow = style['overflow'];
+  const overflow = style["overflow"];
   const overFlowAxis = style[`overflow-${axis}` as any];
-  const general = overflow === 'auto' || overflow === 'scroll';
-  const dimensionScroll = overFlowAxis === 'auto' || overFlowAxis === 'scroll';
+  const general = overflow === "auto" || overflow === "scroll";
+  const dimensionScroll = overFlowAxis === "auto" || overFlowAxis === "scroll";
   return general || dimensionScroll;
 };
 
 export const isScrollingOrHidden = (element: HTMLElement, axis: Axis) => {
   const style = window.getComputedStyle(element);
-  const overflow = style['overflow'];
+  const overflow = style["overflow"];
   const overFlowAxis = style[`overflow-${axis}` as any];
-  const general = overflow === 'auto' || overflow === 'scroll' || overflow === 'hidden';
-  const dimensionScroll = overFlowAxis === 'auto' || overFlowAxis === 'scroll' || overFlowAxis === 'hidden';
+  const general =
+    overflow === "auto" || overflow === "scroll" || overflow === "hidden";
+  const dimensionScroll =
+    overFlowAxis === "auto" ||
+    overFlowAxis === "scroll" ||
+    overFlowAxis === "hidden";
   return general || dimensionScroll;
 };
 
 export const hasBiggerChild = (element: HTMLElement, axis: Axis) => {
-  if (axis === 'x') {
+  if (axis === "x") {
     return element.scrollWidth > element.clientWidth;
   } else {
     return element.scrollHeight > element.clientHeight;
@@ -101,12 +198,26 @@ export const getVisibleRect = (element: HTMLElement, elementRect: Rect) => {
   let rect = elementRect || getContainerRect(element);
   currentElement = element.parentElement!;
   while (currentElement) {
-    if (hasBiggerChild(currentElement, 'x') && isScrollingOrHidden(currentElement, 'x')) {
-      rect = getIntersectionOnAxis(rect, currentElement.getBoundingClientRect(), 'x');
+    if (
+      hasBiggerChild(currentElement, "x") &&
+      isScrollingOrHidden(currentElement, "x")
+    ) {
+      rect = getIntersectionOnAxis(
+        rect,
+        currentElement.getBoundingClientRect(),
+        "x",
+      );
     }
 
-    if (hasBiggerChild(currentElement, 'y') && isScrollingOrHidden(currentElement, 'y')) {
-      rect = getIntersectionOnAxis(rect, currentElement.getBoundingClientRect(), 'y');
+    if (
+      hasBiggerChild(currentElement, "y") &&
+      isScrollingOrHidden(currentElement, "y")
+    ) {
+      rect = getIntersectionOnAxis(
+        rect,
+        currentElement.getBoundingClientRect(),
+        "y",
+      );
     }
 
     currentElement = currentElement.parentElement!;
@@ -115,13 +226,16 @@ export const getVisibleRect = (element: HTMLElement, elementRect: Rect) => {
   return rect;
 };
 
-export const getParentRelevantContainerElement = (element: Element, relevantContainers: IContainer[]) => {
+export const getParentRelevantContainerElement = (
+  element: Element,
+  relevantContainers: IContainer[],
+) => {
   let current: ElementX = element as ElementX;
 
   while (current) {
     if ((current as ElementX)[containerInstance]) {
       const container = current[containerInstance];
-      if (relevantContainers.some(p => p === container)) {
+      if (relevantContainers.some((p) => p === container)) {
         return container;
       }
     }
@@ -129,7 +243,7 @@ export const getParentRelevantContainerElement = (element: Element, relevantCont
   }
 
   return null;
-}
+};
 
 export const listenScrollParent = (element: HTMLElement, clb: () => void) => {
   let scrollers: HTMLElement[] = [];
@@ -139,7 +253,10 @@ export const listenScrollParent = (element: HTMLElement, clb: () => void) => {
   function setScrollers() {
     let currentElement = element;
     while (currentElement) {
-      if (isScrolling(currentElement, 'x') || isScrolling(currentElement, 'y')) {
+      if (
+        isScrolling(currentElement, "x") ||
+        isScrolling(currentElement, "y")
+      ) {
         scrollers.push(currentElement);
       }
       currentElement = currentElement.parentElement!;
@@ -149,26 +266,26 @@ export const listenScrollParent = (element: HTMLElement, clb: () => void) => {
   function dispose() {
     stop();
     scrollers = null!;
-  };
+  }
 
   function start() {
     if (scrollers) {
-      scrollers.forEach(p => p.addEventListener('scroll', clb));
-      window.addEventListener('scroll', clb);
+      scrollers.forEach((p) => p.addEventListener("scroll", clb));
+      window.addEventListener("scroll", clb);
     }
   }
 
   function stop() {
     if (scrollers) {
-      scrollers.forEach(p => p.removeEventListener('scroll', clb));
-      window.removeEventListener('scroll', clb);
+      scrollers.forEach((p) => p.removeEventListener("scroll", clb));
+      window.removeEventListener("scroll", clb);
     }
   }
 
   return {
     dispose,
     start,
-    stop
+    stop,
   };
 };
 
@@ -195,29 +312,59 @@ export const getParent = (element: Element | null, selector: string) => {
   return null;
 };
 
+function createsFixedPositionContainingBlock(element: HTMLElement) {
+  const style = window.getComputedStyle(element);
+  const willChange = style.getPropertyValue("will-change") || "";
+  const contain = style.getPropertyValue("contain") || "";
+  const backdropFilter = style.getPropertyValue("backdrop-filter") || "";
+
+  return (
+    style.transform !== "none" ||
+    style.perspective !== "none" ||
+    style.filter !== "none" ||
+    backdropFilter !== "none" ||
+    willChange.indexOf("transform") > -1 ||
+    willChange.indexOf("perspective") > -1 ||
+    willChange.indexOf("filter") > -1 ||
+    contain.indexOf("paint") > -1
+  );
+}
+
+export const hasFixedPositionContainingBlockParent = (element: HTMLElement | null) => {
+  let current = element;
+  while (current && current !== window.document.body) {
+    if (createsFixedPositionContainingBlock(current)) {
+      return true;
+    }
+    current = current.parentElement;
+  }
+
+  return false;
+};
+
 export const hasClass = (element: HTMLElement, cls: string) => {
   return (
     element.className
-      .split(' ')
-      .map(p => p)
+      .split(" ")
+      .map((p) => p)
       .indexOf(cls) > -1
   );
 };
 
 export const addClass = (element: Element | null | undefined, cls: string) => {
   if (element) {
-    const classes = element.className.split(' ').filter(p => p);
+    const classes = element.className.split(" ").filter((p) => p);
     if (classes.indexOf(cls) === -1) {
       classes.unshift(cls);
-      element.className = classes.join(' ');
+      element.className = classes.join(" ");
     }
   }
 };
 
 export const removeClass = (element: HTMLElement, cls: string) => {
   if (element) {
-    const classes = element.className.split(' ').filter(p => p && p !== cls);
-    element.className = classes.join(' ');
+    const classes = element.className.split(" ").filter((p) => p && p !== cls);
+    element.className = classes.join(" ");
   }
 };
 
@@ -242,7 +389,11 @@ export const removeChildAt = (parent: HTMLElement, index: number) => {
   return parent.removeChild(parent.children[index]);
 };
 
-export const addChildAt = (parent: HTMLElement, child: HTMLElement, index: number) => {
+export const addChildAt = (
+  parent: HTMLElement,
+  child: HTMLElement,
+  index: number,
+) => {
   if (index >= parent.children.length) {
     parent.appendChild(child);
   } else {
@@ -251,7 +402,7 @@ export const addChildAt = (parent: HTMLElement, child: HTMLElement, index: numbe
 };
 
 export const isMobile = () => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     if (
       window.navigator.userAgent.match(/Android/i) ||
       window.navigator.userAgent.match(/webOS/i) ||
@@ -271,12 +422,13 @@ export const isMobile = () => {
 
 export const clearSelection = () => {
   if (window.getSelection) {
-    if (window.getSelection().empty) {
+    const selection = window.getSelection();
+    if (selection && (selection as any).empty) {
       // Chrome
-      window.getSelection().empty();
-    } else if (window.getSelection().removeAllRanges) {
+      (selection as any).empty();
+    } else if (selection && selection.removeAllRanges) {
       // Firefox
-      window.getSelection().removeAllRanges();
+      selection.removeAllRanges();
     }
   } else if ((window.document as any).selection) {
     // IE?
@@ -295,8 +447,10 @@ export const getElementCursor = (element: Element | null) => {
   return null;
 };
 
-
-export const getDistanceToParent = (parent: HTMLElement, child: HTMLElement): number | null => {
+export const getDistanceToParent = (
+  parent: HTMLElement,
+  child: HTMLElement,
+): number | null => {
   let current: Element | null = child;
   let dist = 0;
   while (current) {
@@ -308,7 +462,7 @@ export const getDistanceToParent = (parent: HTMLElement, child: HTMLElement): nu
   }
 
   return null;
-}
+};
 
 export function isVisible(rect: Rect): boolean {
   return !(rect.bottom <= rect.top || rect.right <= rect.left);

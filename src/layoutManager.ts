@@ -87,9 +87,26 @@ export default function layoutManager(containerElement: ElementX, orientation: O
 	}
 
 	function invalidateContainerScale(containerElement: ElementX) {
-		const rect = containerElement.getBoundingClientRect();
-		values.scaleX = containerElement.offsetWidth ? ((rect.right - rect.left) / containerElement.offsetWidth) : 1;
-		values.scaleY = containerElement.offsetHeight ? ((rect.bottom - rect.top) / containerElement.offsetHeight) : 1;
+		const scale = Utils.getElementScale(containerElement);
+		values.scaleX = scale.x;
+		values.scaleY = scale.y;
+	}
+
+	function getScale() {
+		return propMapper.get(values, 'scale') || 1;
+	}
+
+	function toLocalPixels(renderedPixels: number) {
+		return renderedPixels / getScale();
+	}
+
+	function parsePixelValue(value: string) {
+		const parsed = parseFloat(value);
+		if (Number.isNaN(parsed)) {
+			return null;
+		}
+
+		return parsed;
 	}
 
 	function getContainerRectangles() {
@@ -122,28 +139,34 @@ export default function layoutManager(containerElement: ElementX, orientation: O
 	function getSize(element: HTMLElement | OffsetSize) {
 		const htmlElement = element as HTMLElement;
 		if (htmlElement.tagName) {
-			const rect = htmlElement.getBoundingClientRect();
-			return orientation === 'vertical' ? rect.bottom - rect.top : rect.right - rect.left;
+			return propMapper.get(htmlElement, 'offsetSize') * getScale();
 		}
 
-		return propMapper.get(element, 'size') * propMapper.get(values, 'scale');
+		return propMapper.get(element, 'size');
 	}
 
 	function getDistanceToOffsetParent(element: ElementX) {
-		const distance = propMapper.get(element, 'distanceToParent') + (element[translationValue] || 0);
-		return distance * propMapper.get(values, 'scale');
+		return propMapper.get(element, 'distanceToParent') * getScale() + (element[translationValue] || 0);
 	}
 
 	function getBeginEnd(element: HTMLElement) {
-		const begin = getDistanceToOffsetParent(element) + (propMapper.get(values.rect, 'begin') + values.translation) - propMapper.get(containerElement, 'scrollValue');
+		const begin = getDistanceToOffsetParent(element as ElementX) +
+			(propMapper.get(values.rect, 'begin') + values.translation) -
+			getScrollValue(containerElement);
 		return {
 			begin,
-			end: begin + getSize(element) * propMapper.get(values, 'scale')
+			end: begin + getSize(element)
 		};
 	}
 
 	function setSize(element: HTMLElement | CSSStyleDeclaration, size: string) {
-		propMapper.set(element, 'setSize', size);
+		const parsedSize = parsePixelValue(size);
+		if (parsedSize === null || size.indexOf('px') === -1) {
+			propMapper.set(element, 'setSize', size);
+			return;
+		}
+
+		propMapper.set(element, 'setSize', `${toLocalPixels(parsedSize)}px`);
 	}
 
 	function getAxisValue(position: Position) {
@@ -154,7 +177,7 @@ export default function layoutManager(containerElement: ElementX, orientation: O
 		if (!translation) {
 			element.style.removeProperty('transform');
 		} else {
-			propMapper.set(element.style, 'translate', translation);
+			propMapper.set(element.style, 'translate', toLocalPixels(translation));
 		}
 		element[translationValue] = translation;
 	}
@@ -211,15 +234,15 @@ export default function layoutManager(containerElement: ElementX, orientation: O
 	}
 
 	function getScrollSize(element: HTMLElement) {
-		return propMapper.get(element, 'scrollSize');
+		return propMapper.get(element, 'scrollSize') * getScale();
 	}
 
 	function getScrollValue(element: HTMLElement) {
-		return propMapper.get(element, 'scrollValue');
+		return propMapper.get(element, 'scrollValue') * getScale();
 	}
 
 	function setScrollValue(element: HTMLElement, val: number) {
-		return propMapper.set(element, 'scrollValue', val);
+		return propMapper.set(element, 'scrollValue', toLocalPixels(val));
 	}
 
 	function getPosition(position: Position) {
@@ -231,7 +254,13 @@ export default function layoutManager(containerElement: ElementX, orientation: O
 	}
 
 	function setBegin(style: CSSStyleDeclaration, value: string) {
-		propMapper.set(style, 'begin', value);
+		const parsedValue = parsePixelValue(value);
+		if (parsedValue === null || value.indexOf('px') === -1) {
+			propMapper.set(style, 'begin', value);
+			return;
+		}
+
+		propMapper.set(style, 'begin', `${toLocalPixels(parsedValue)}px`);
 	}
 
 	return {

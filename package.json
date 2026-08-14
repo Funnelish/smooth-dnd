@@ -3,10 +3,20 @@
   "version": "0.12.1",
   "description": "Drag and Drop library",
   "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "jsnext:main": "./dist/index.esm.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "bundle": "rollup -c --environment INCLUDE_DEPS,BUILD:production",
     "tsc": "tsc --emitDeclarationOnly --outDir dist",
-    "build": "npm run tsc && npm run bundle"
+    "build": "pnpm run tsc && pnpm run bundle"
   },
   "types": "./dist/index.d.ts",
   "files": [

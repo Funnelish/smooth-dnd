@@ -5,7 +5,19 @@ const extensions = [
 	'.js', '.jsx', '.ts', '.tsx',
 ];
 
-module.exports = {
+const plugins = [
+  babel({
+		extensions,
+    include: ['./index.ts', 'src/**/*'],
+    exclude: 'node_modules/**',
+  }),
+	commonjs({
+		extensions
+	}),
+];
+
+module.exports = [
+{
   input: 'index.ts',
   output: {
     file: './dist/index.js',
@@ -15,14 +27,18 @@ module.exports = {
     exports: 'named',
   },
 	plugins: [
-    babel({
-			extensions,
-      include: ['./index.ts', 'src/**/*'],
-      exclude: 'node_modules/**',
-    }),
-		commonjs({
-			extensions
-		}),
+    ...plugins,
     uglify()
   ],
-};
+},
+{
+  input: 'index.ts',
+  output: {
+    file: './dist/index.esm.js',
+    format: 'es',
+    sourcemap: false,
+    exports: 'named',
+  },
+  plugins,
+}
+];

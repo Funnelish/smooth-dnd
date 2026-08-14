@@ -1,4 +1,29 @@
-# smooth-dnd
+# @funnelish/smooth-dnd
+
+> **Funnelish fork of [`smooth-dnd`](https://github.com/kutlugsahin/smooth-dnd).**
+> Adds CSS `transform` / `scale` support so drag behaves correctly inside a zoomed
+> editor canvas. Published to GitHub Packages as `@funnelish/smooth-dnd`, on a fresh
+> `1.x` version line — it is **not** interchangeable with public `smooth-dnd@0.12.x`.
+>
+> **Install** — requires a GitHub token with `read:packages` (same one used for
+> `@funnelish/ui-lib`), and an `.npmrc` mapping the scope:
+>
+> ```
+> @funnelish:registry=https://npm.pkg.github.com
+> //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+> ```
+>
+> ```shell
+> pnpm add @funnelish/smooth-dnd
+> ```
+>
+> **Releasing** — `master` is the integration branch. Bump `version` in
+> `package.json`, then open a PR from `master` into `PROD`; merging it builds,
+> attests, and publishes. See `.github/workflows/release-package.yml`.
+>
+> Upstream documentation follows.
+
+---
 
 A fast and lightweight drag&drop, sortable library for with many configuration options covering many d&d scenarios. There is no external dependencies. It uses css transitions for animations so it's hardware accelerated whenever possible.
 

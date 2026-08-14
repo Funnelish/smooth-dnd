@@ -129,8 +129,20 @@ jobs:
       # `npm publish <tarball>` deliberately, not pnpm: this job installs
       # nothing, so it needs no package manager beyond the one bundled with
       # Node. pnpm publish expects a project directory, not a tarball.
+      #
+      # The path MUST stay './'-prefixed. npm parses a bare `dir/file.tgz` as
+      # the `owner/repo` GitHub shorthand and tries to git-clone it, which
+      # fails with a misleading "Permission denied (publickey)".
       - name: Publish
-        run: npm publish artifact/*.tgz --ignore-scripts
+        run: |
+          shopt -s nullglob
+          tarballs=(./artifact/*.tgz)
+          if [ ${#tarballs[@]} -ne 1 ]; then
+            echo "::error::expected exactly one tarball in ./artifact, found ${#tarballs[@]}"
+            exit 1
+          fi
+          echo "Publishing ${tarballs[0]}"
+          npm publish "${tarballs[0]}" --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

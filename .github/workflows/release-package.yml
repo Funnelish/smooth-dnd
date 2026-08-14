@@ -35,18 +35,23 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.1.0
+
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
           registry-url: https://npm.pkg.github.com/
           scope: '@funnelish'
 
       # --ignore-scripts blocks arbitrary install-time code from the
       # dependency tree. This package needs no native build steps.
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Read package version
         id: pkg
@@ -65,7 +70,7 @@ jobs:
           fi
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Verify build output
         run: |
@@ -76,7 +81,7 @@ jobs:
       # Pack here so the bytes that get published are exactly the bytes
       # that were built and checked. The publish job never rebuilds.
       - name: Pack tarball
-        run: npm pack --pack-destination ./artifact
+        run: pnpm pack --pack-destination ./artifact
 
       - name: Upload tarball
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -121,6 +126,9 @@ jobs:
         with:
           subject-path: 'artifact/*.tgz'
 
+      # `npm publish <tarball>` deliberately, not pnpm: this job installs
+      # nothing, so it needs no package manager beyond the one bundled with
+      # Node. pnpm publish expects a project directory, not a tarball.
       - name: Publish
         run: npm publish artifact/*.tgz --ignore-scripts
         env:

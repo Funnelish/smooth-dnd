@@ -671,6 +671,7 @@ function Container(element: HTMLElement): (options?: ContainerOptions) => IConta
     let dropHandler = handleDrop(props);
     let scrollListener = listenScrollParent(element, onScroll);
 
+    console.log('init container',containerOptions)
     function processLastDraggableInfo() {
       if (lastDraggableInfo !== null) {
         lastDraggableInfo.invalidateShadow = true;

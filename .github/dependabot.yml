@@ -1,0 +1,14 @@
+version: 2
+
+updates:
+  # Keeps the SHA-pinned actions in .github/workflows current — pinning
+  # without automated updates just means running stale actions forever.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'

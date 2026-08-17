@@ -21,7 +21,10 @@ export const noUserSelectClass = 'smooth-dnd-no-user-select';
 
 export const preventAutoScrollClass = 'smooth-dnd-prevent-auto-scroll-class';
 
-export const dropPlaceholderDefaultClass = 'smooth-dnd-drop-preview-default-class';
+export const dropPlaceholderDefaultClass =
+  'smooth-dnd-drop-preview-default-class';
 export const dropPlaceholderInnerClass = 'smooth-dnd-drop-preview-inner-class';
-export const dropPlaceholderWrapperClass = 'smooth-dnd-drop-preview-constant-class'
-export const dropPlaceholderFlexContainerClass = 'smooth-dnd-drop-preview-flex-container-class'
+export const dropPlaceholderWrapperClass =
+  'smooth-dnd-drop-preview-constant-class';
+export const dropPlaceholderFlexContainerClass =
+  'smooth-dnd-drop-preview-flex-container-class';

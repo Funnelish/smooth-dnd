@@ -22,13 +22,13 @@ export interface Rect {
   bottom: number;
 }
 
-export type OffsetSize = { offsetWidth: number; offsetHeight: number }
+export type OffsetSize = { offsetWidth: number; offsetHeight: number };
 
 export type Axis = 'x' | 'y';
 export enum ScrollAxis {
   x = 'x',
   y = 'y',
-  xy = 'xy'
+  xy = 'xy',
 }
 export type Boundary = { begin: number; end: number };
 export type TopLeft = { top: number; left: number };
@@ -44,7 +44,6 @@ export interface ScrolableInfo {
   axis: Axis;
 }
 
-
 export interface DragInfo {
   dragResult: DragResult;
   draggableInfo: DraggableInfo;
@@ -55,7 +54,11 @@ export interface DragResult {
   addedIndex: number | null;
   removedIndex: number | null;
   elementSize: number;
-  shadowBeginEnd: Boundary & { beginAdjustment: number; rect?: TopLeft, dropArea?: Boundary };
+  shadowBeginEnd: Boundary & {
+    beginAdjustment: number;
+    rect?: TopLeft;
+    dropArea?: Boundary;
+  };
   containerBoxChanged?: boolean;
   dropPlaceholderContainer?: HTMLDivElement;
 }
@@ -107,7 +110,7 @@ export interface GhostInfo {
   topLeft: {
     x: number;
     y: number;
-  }
+  };
   ghost: HTMLElement;
   centerDelta: Position;
   positionDelta: { left: number; top: number };
@@ -148,7 +151,7 @@ export interface LayoutManager {
   getTopLeftOfElementBegin: (begin: number) => {
     top: number;
     left: number;
-  }
+  };
   getScrollSize: (element: HTMLElement) => number;
   getScrollValue: (element: HTMLElement) => number;
   setScrollValue: (element: HTMLElement, val: number) => void;

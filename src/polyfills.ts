@@ -1,7 +1,10 @@
-
 function applyPolyfills() {
   (function (constructor: any) {
-    if (constructor && constructor.prototype && !constructor.prototype.matches) {
+    if (
+      constructor &&
+      constructor.prototype &&
+      !constructor.prototype.matches
+    ) {
       constructor.prototype.matches =
         constructor.prototype.matchesSelector ||
         constructor.prototype.mozMatchesSelector ||
@@ -9,9 +12,11 @@ function applyPolyfills() {
         constructor.prototype.oMatchesSelector ||
         constructor.prototype.webkitMatchesSelector ||
         function (s: string) {
-          var matches = (this.document || this.ownerDocument).querySelectorAll(s),
+          var matches = (this.document || this.ownerDocument).querySelectorAll(
+              s
+            ),
             i = matches.length;
-          while (--i >= 0 && matches.item(i) !== this) { }
+          while (--i >= 0 && matches.item(i) !== this) {}
           return i > -1;
         };
     }
@@ -26,7 +31,7 @@ function applyPolyfills() {
       constructor.prototype &&
       constructor.prototype.firstElementChild == null
     ) {
-      Object.defineProperty(constructor.prototype, "firstElementChild", {
+      Object.defineProperty(constructor.prototype, 'firstElementChild', {
         get: function () {
           var node,
             nodes = this.childNodes,
@@ -37,7 +42,7 @@ function applyPolyfills() {
             }
           }
           return null;
-        }
+        },
       });
     }
   })(Node || Element);
@@ -46,13 +51,13 @@ function applyPolyfills() {
   // Reference: http://es5.github.io/#x15.4.4.17
   if (!Array.prototype.some) {
     Array.prototype.some = function (fun /*, thisArg*/) {
-      "use strict";
+      'use strict';
 
       if (this == null) {
-        throw new TypeError("Array.prototype.some called on null or undefined");
+        throw new TypeError('Array.prototype.some called on null or undefined');
       }
 
-      if (typeof fun !== "function") {
+      if (typeof fun !== 'function') {
         throw new TypeError();
       }
 

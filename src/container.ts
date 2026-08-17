@@ -318,14 +318,9 @@ function setRemovedItemVisibilty({ draggables, layout }: ContainerProps) {
 function getPosition({ element, layout }: ContainerProps) {
   return ({ draggableInfo }: DragInfo) => {
     let hitElement = document.elementFromPoint(
-      draggableInfo.position.x,
-      draggableInfo.position.y
+      draggableInfo.mousePosition.x,
+      draggableInfo.mousePosition.y
     );
-
-    // TODO: if center is out of bounds use mouse position for hittest
-    // if (!hitElement) {
-    //   hitElement = document.elementFromPoint(draggableInfo.mousePosition.x, draggableInfo.mousePosition.y);
-    // }
 
     if (hitElement) {
       const container: IContainer = getParentRelevantContainerElement(

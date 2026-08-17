@@ -46,10 +46,10 @@ function setAnimation(
 ) {
   if (add) {
     addClass(element, animationClass);
-    element.style.transitionDuration = animationDuration + "ms";
+    element.style.transitionDuration = animationDuration + 'ms';
   } else {
     removeClass(element, animationClass);
-    element.style.removeProperty("transition-duration");
+    element.style.removeProperty('transition-duration');
   }
 }
 
@@ -61,9 +61,9 @@ function isDragRelevant({ element, getOptions }: ContainerProps) {
       return options.shouldAcceptDrop(sourceContainer.getOptions(), payload);
     }
     const sourceOptions = sourceContainer.getOptions();
-    if (options.behaviour === "copy") return false;
+    if (options.behaviour === 'copy') return false;
 
-    const parentWrapper = getParent(element, "." + wrapperClass);
+    const parentWrapper = getParent(element, '.' + wrapperClass);
     if (parentWrapper === sourceContainer.element) {
       return false;
     }
@@ -81,7 +81,7 @@ function isDragRelevant({ element, getOptions }: ContainerProps) {
 
 function wrapChild(child: HTMLElement) {
   if (smoothDnD.wrapChild) {
-    const div = window.document.createElement("div");
+    const div = window.document.createElement('div');
     div.className = `${wrapperClass}`;
     child.parentElement!.insertBefore(div, child);
     div.appendChild(child);
@@ -127,7 +127,7 @@ function findDraggebleAtPos({ layout }: { layout: LayoutManager }) {
     pos: number,
     startIndex: number,
     endIndex: number,
-    withRespectToMiddlePoints = false,
+    withRespectToMiddlePoints = false
   ): number | null => {
     if (endIndex < startIndex) {
       return startIndex;
@@ -319,13 +319,13 @@ function getPosition({ element, layout }: ContainerProps) {
   return ({ draggableInfo }: DragInfo) => {
     let hitElement = document.elementFromPoint(
       draggableInfo.mousePosition.x,
-      draggableInfo.mousePosition.y,
+      draggableInfo.mousePosition.y
     );
 
     if (hitElement) {
       const container: IContainer = getParentRelevantContainerElement(
         hitElement,
-        draggableInfo.relevantContainers,
+        draggableInfo.relevantContainers
       );
       if (container && container.element === element) {
         return {
@@ -429,15 +429,15 @@ function drawDropPlaceholder({ layout, element, getOptions }: ContainerProps) {
           : (options.dropPlaceholder as DropPlaceholderOptions);
       if (addedIndex !== null) {
         if (!dropPlaceholderContainer) {
-          const innerElement = document.createElement("div");
-          const flex = document.createElement("div");
+          const innerElement = document.createElement('div');
+          const flex = document.createElement('div');
           flex.className = dropPlaceholderFlexContainerClass;
           innerElement.className = `${dropPlaceholderInnerClass} ${className || dropPlaceholderDefaultClass}`;
           dropPlaceholderContainer = document.createElement(
             'div'
           ) as HTMLDivElement;
           dropPlaceholderContainer.className = `${dropPlaceholderWrapperClass}`;
-          dropPlaceholderContainer.style.position = "absolute";
+          dropPlaceholderContainer.style.position = 'absolute';
 
           if (animationDuration !== undefined) {
             dropPlaceholderContainer.style.transition = `all ${animationDuration}ms ease`;
@@ -445,9 +445,9 @@ function drawDropPlaceholder({ layout, element, getOptions }: ContainerProps) {
 
           dropPlaceholderContainer.appendChild(flex);
           flex.appendChild(innerElement);
-          layout.setSize(dropPlaceholderContainer.style, elementSize + "px");
+          layout.setSize(dropPlaceholderContainer.style, elementSize + 'px');
 
-          dropPlaceholderContainer.style.pointerEvents = "none";
+          dropPlaceholderContainer.style.pointerEvents = 'none';
 
           if (showOnTop) {
             element.appendChild(dropPlaceholderContainer);
@@ -782,7 +782,7 @@ function fireOnDropReady({ getOptions }: ContainerProps) {
 }
 
 function getDragHandler(params: ContainerProps) {
-  if (params.getOptions().behaviour === "drop-zone") {
+  if (params.getOptions().behaviour === 'drop-zone') {
     // sorting is disabled in container, addedIndex will always be 0 if dropped in
     return compose(params)(
       getRemovedItem,
@@ -793,7 +793,7 @@ function getDragHandler(params: ContainerProps) {
       getDragInsertionIndexForDropZone,
       getShadowBeginEndForDropZone,
       fireDragEnterLeaveEvents,
-      fireOnDropReady,
+      fireOnDropReady
     );
   } else {
     return compose(params)(
@@ -811,7 +811,7 @@ function getDragHandler(params: ContainerProps) {
       drawDropPlaceholder,
       handleFirstInsertShadowAdjustment,
       fireDragEnterLeaveEvents,
-      fireOnDropReady,
+      fireOnDropReady
     );
   }
 }

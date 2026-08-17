@@ -322,8 +322,6 @@ function getPosition({ element, layout }: ContainerProps) {
       draggableInfo.mousePosition.y,
     );
 
-    console.log(draggableInfo.mousePosition);
-
     if (hitElement) {
       const container: IContainer = getParentRelevantContainerElement(
         hitElement,

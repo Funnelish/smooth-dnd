@@ -1,6 +1,6 @@
 {
   "name": "@funnelish/smooth-dnd",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Drag and Drop library — Funnelish fork of smooth-dnd with CSS transform/scale support",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

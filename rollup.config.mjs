@@ -1,20 +1,26 @@
-import babel from 'rollup-plugin-babel';
-import { uglify } from 'rollup-plugin-uglify';
-import commonjs from 'rollup-plugin-commonjs';
+import { babel } from '@rollup/plugin-babel';
+import commonjs from '@rollup/plugin-commonjs';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+
 const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 
 const plugins = [
+  nodeResolve({
+    extensions,
+  }),
+  commonjs({
+    include: /node_modules/,
+  }),
   babel({
+    babelHelpers: 'bundled',
     extensions,
     include: ['./index.ts', 'src/**/*'],
     exclude: 'node_modules/**',
   }),
-  commonjs({
-    extensions,
-  }),
 ];
 
-module.exports = [
+export default [
   {
     input: 'index.ts',
     output: {
@@ -24,7 +30,7 @@ module.exports = [
       name: 'SmoothDnD',
       exports: 'named',
     },
-    plugins: [...plugins, uglify()],
+    plugins: [...plugins, terser()],
   },
   {
     input: 'index.ts',

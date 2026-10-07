@@ -173,9 +173,7 @@ function getGhostElement(
   ghost.style.position = 'fixed';
   ghost.style.top = '0px';
   ghost.style.left = '0px';
-  ghost.style.transform = null;
   ghost.style.removeProperty('transform');
-  ghost.style.transformOrigin = null!;
   ghost.style.removeProperty('transform-origin');
 
   if (visualViewportTransform) {
@@ -675,7 +673,9 @@ function onMouseUp() {
 }
 
 function getPointerEvent(e: TouchEvent & MouseEvent): MouseEvent & TouchEvent {
-  return e.touches ? e.touches[0] : (e as any);
+  return e.touches
+    ? (e.touches[0] as unknown as MouseEvent & TouchEvent)
+    : (e as any);
 }
 
 function handleDragImmediate(

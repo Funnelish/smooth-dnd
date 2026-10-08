@@ -61,6 +61,6 @@
     "typescript": "7.0.2"
   },
   "dependencies": {
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.9"
   }
 }
